@@ -7,7 +7,7 @@ Created on Thu Oct 28 10:03:14 2021
 import pandas as pd
 import numpy as np
 
-def VanillaEuropenOption():
+def VanillaEuropeanOption():
     
     return
 
