@@ -57,7 +57,7 @@ def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
             C = B*((1-q)*C[1:i+1] + q*C[0:i])        
         return C[0]
         
-
+"""
 def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False):
     # Declaración de variables
     delta = T/N
@@ -75,8 +75,41 @@ def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False):
         S = S0*(d**(arange(i,-1,-1)))*(u**(arange(0,i+1,1)))
         C[:i+1] = B*(q*C[1:i+2] + (1-q)*C[0:i+1])
         C = C[:-1]
-        C = maximum((S-K)* ((-1)**put),C)
+        C = maximum((S-K)* ((-1)**put),C)        
     return C[0]
+"""
+
+def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False, hedge = True):
+    # Declaración de variables
+    delta = T/N
+    B = exp(-r*delta)
+    q = (B**(-1) - d)/(u-d)
+    
+    # Precios al tiempo N
+    S = S0*(u**(arange(N,-1,-1)))*(d**(arange(0,N+1,1)))
+    
+    # Valor del payoff
+    C = maximum((S-K)* ((-1)**put),0)   
+    
+    if hedge:
+        delta = []
+        # Valor del derivado tomando el árbol hacia atrás
+        for i in arange(N-1, -1,-1):
+            delta.append((C[0:i+1]-C[1:i+2])/(S[0:i+1]-S[1:i+2]))
+            S = S0*(u**(arange(i,-1,-1)))*(d**(arange(0,i+1,1)))
+            C[:i+1] = B*((1-q)*C[1:i+2] + q*C[0:i+1])
+            C = C[:-1]
+            C = maximum((S-K)* ((-1)**put),C)
+        return C[0], delta
+    else:
+        # Valor del derivado tomando el árbol hacia atrás
+        for i in arange(N-1, -1,-1):
+            S = S0*(u**(arange(i,-1,-1)))*(d**(arange(0,i+1,1)))
+            C[:i+1] = B*((1-q)*C[1:i+2] + q*C[0:i+1])
+            C = C[:-1]
+            C = maximum((S-K)* ((-1)**put),C)
+        return C[0]
+    
 
 def AsianOption(K, T, S0, N, r, u, d):
     S = [S0*(d**(arange(0, i+1, 1)))*(u**(arange(i,-1,-1))) for i in arange(N, -1,-1)]
@@ -154,10 +187,6 @@ class Derivative:
     def compute(self, kind = "European", Call = True, *args):
         
         return
-
-    # def plot(self):
-        
-    #     return
     
     def summary(self):
         
