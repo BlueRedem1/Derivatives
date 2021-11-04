@@ -220,7 +220,7 @@ def DigitalOption(K, T, r, S0, N, u, d):
     arbol = np.zeros((N + 1, N + 1))
     arbol[0,0] = S_0
     # Resto de los pasos
-    for col in range(1, N +1):
+for col in range(1, N +1):
     for ren in range(0, N +1):
         if((col - ren) >= 0):
             arbol[ren, col] = S_0 *(( u ** (col - ren)) * (d ** (ren)))
@@ -235,7 +235,7 @@ def DigitalOption(K, T, r, S0, N, u, d):
             base[ren, N] = 0
             
     # Valuando backwards        
-    for i in range(1, N + 1):
+for i in range(1, N + 1):
     col = N - i
     for j in range(0, col +1): 
         payoffs[j, col] = math.exp(-r * delta_t) * (p * payoffs[j, col + 1] + (1 - p)*payoffs[j +1, col +1])
@@ -243,15 +243,15 @@ def DigitalOption(K, T, r, S0, N, u, d):
 
     # Alfas
     alfas = np.zeros((N, N ))
-    for ren in range(0,N):
+for ren in range(0,N):
     for col in range(0, N):
-        if((col - ren) >= 0):
+            if((col - ren) >= 0):
             alfas[ren,col]=(payoffs[ren,col+1]-payoffs[ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
     return alfas[]
 
     # Betas
     betas = np.zeros((N, N ))
-    for ren in range(0,N):
+for ren in range(0,N):
     for col in range(0, N):
         #Condicional para limitar matriz superior triangular
         if((col - ren) >= 0):
