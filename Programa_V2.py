@@ -71,7 +71,8 @@ def AsianOption(K, T, S0, N, r, u, d):
     delta = T/N
     B = exp(-r*delta)
     q = (B**(-1) - d)/(u-d)
-    # Matriz que almacena los valores del subyacente
+    
+    # Matriz que almacena los valores del subyacente.
     arbol = zeros((N+1,N+1))
     arbol[0,0] = S0
     #For para llenar los valores de la matriz
