@@ -165,7 +165,7 @@ def LookBackOption():
     
     return
 
-"""
+
 def DigitalOption(K, T, r, S0, N, u, d):
     delta_t = T / n
     # Probabilidad de aumento en el precio
@@ -180,12 +180,23 @@ def DigitalOption(K, T, r, S0, N, u, d):
     for ren in range(0, n +1):
         if((col - ren) >= 0):
             arbol[ren, col] = S_0 *(( u ** (col - ren)) * (d ** (ren)))
-    
     return arbol
 
     # Payoff primer paso
     payoffs = np.zeros((n+1, n+1))
-"""
+    for ren in range(0, n+1):
+        if (arbol[ren, n] > S_0):
+            payoffs[ren, n] = k
+        else:
+            base[ren, n] = 0
+            
+    # Valuando backwards        
+    for i in range(1, n + 1):
+    col = n - i
+    for j in range(0, col +1): 
+        payoffs[j, col] = math.exp(-r * delta_t) * (p * payoffs[j, col + 1] + (1 - p)*payoffs[j +1, col +1])
+    return payoffs[0,0]    
+            
 class Derivative:
     
     def __init__(self):
