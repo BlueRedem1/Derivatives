@@ -4,20 +4,9 @@ Created on Thu Oct 28 10:03:14 2021
 
 @author: Arath Reyes
 """
-import pandas as pd
-import yfinance as yf
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
 import itertools
-
-"""
-Aún falta el que la Americana de las alphas/deltas, y que toda la 
-construcción de la asiática. Para ambos casos se necesita calcular el valor del 
-subyacente en todos los nodos y los valores del derivado, para estas opciones
-que dependen de la trayectoria se me ocurre hacer un árbol binario, pero
-puede que sea más complicado :s
-
-"""
 
 def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
     # Declaración de variables
@@ -44,30 +33,8 @@ def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
         for i in arange(N,0,-1):
             C = B*((1-q)*C[1:i+1] + q*C[0:i])        
         return C[0]
-        
-"""
-def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False):
-    # Declaración de variables
-    delta = T/N
-    B = exp(-r*delta)
-    q = (B**(-1) - d)/(u-d)
-    
-    # Precios al tiempo N
-    S = S0*(d**(arange(N,-1,-1)))*(u**(arange(0,N+1,1)))
-    
-    # Valor del payoff
-    C = maximum((S-K)* ((-1)**put),0)
-    
-    # Valor del derivado tomando el árbol hacia atrás
-    for i in arange(N-1, -1,-1):
-        S = S0*(d**(arange(i,-1,-1)))*(u**(arange(0,i+1,1)))
-        C[:i+1] = B*(q*C[1:i+2] + (1-q)*C[0:i+1])
-        C = C[:-1]
-        C = maximum((S-K)* ((-1)**put),C)        
-    return C[0]
-"""
 
-def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False, hedge = True):
+def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
     # Declaración de variables
     delta = T/N
     B = exp(-r*delta)
@@ -130,7 +97,7 @@ def AsianOption(K, T, S0, N, r, u, d):
     #Sobreescribimos matriz de payoffs mediante el método iterativo
     for i in range(1, N + 1):
         col = N - i
-        for j in range(0, col +1): 
+        for j in range(0, 2**col): 
             payoffs[j, col] = B * (q * payoffs[2*j, col + 1] + (1 - q)*payoffs[2*j +1, col +1])
             
     #Matriz que almacena los valores de las alfas  
@@ -244,23 +211,80 @@ def DigitalOption(K, T, r, S0, N, u, d):
 
 class Derivative:
     
-    def __init__(self, S0, K, volatility, r):
+    def __init__(self, S0, K, volatility, r, N, T, kind, put = False, B = None):
         self.strike = K
-        self.payoff = 0.0
+        self.kind = kind
+        self.put = put
         self.volatility = vol
-        self.rate = 0.0
-        self.periods = 0.0
-        self.date = 0.0
-        self.delta = []
+        self.rate = r
+        self.periods = N
+        self.lenght = T
+        self.deltas = []
         self.S0 = 0.0
         self.q = 0.0
         self.price = 0.0
+        self.barrier = B
         
-    def compute(self, kind = "European", Call = True, *args):
-        
+    def compute(self):
+        delta = self.lenght/self.periods
+        u = exp((self.rate - ((self.volatility**2)/2))*delta + self.volatility*np.sqrt(delta))
+        d = exp((self.rate - ((self.volatility**2)/2))*delta - self.volatility*np.sqrt(delta))
+        if self.kind == "European":
+            self.price, self.deltas = VanillaEuropeanOption(K = self.strike,\
+                                                            T = self.lenght,\
+                                                            S0 = self.S0,\
+                                                            r = self.rate,\
+                                                            N = self.periods,\
+                                                            u=u, d=d,\
+                                                            put = self.put,\
+                                                            hedge = True)
+        elif self.kind == "American":
+            self.price, self.deltas = VanillaAmericanOption(K = self.strike,\
+                                                            T = self.lenght,\
+                                                            S0 = self.S0,\
+                                                            r = self.rate,\
+                                                            N = self.periods,\
+                                                            u=u, d=d,\
+                                                            put = self.put,\
+                                                            hedge = True)
+        elif self.kind == "Asian":
+            self.price, self.deltas, _ = AsianOption(K = self.strike,\
+                                                     T = self.lenght,\
+                                                     S0 = self.S0,\
+                                                     N = self.periods,\
+                                                     r = self.rate,\
+                                                     u=u, d=d)
+        elif self.kind == "Forward":
+            self.price = Forward(K=self.strike, S0=self.S0, r=self.rate)
+        elif self.kind == "UpNOut:
+            self.price = UpNOutOption(K=self.strike, T=self.lenght, S0=self.S0,\
+                                      B=self.barrier, r=self.rate, N=self.periods,\
+                                      u = u, d=d, put = self.put)
+        elif self.kind == "UpNIN":
+            self.price = UpNInOption(K=self.strike, T=self.lenght, S0=self.S0,\
+                                     B=self.barrier, r=self.rate, N=self.periods,\
+                                     u=u, d=d, put = self.put)
+        elif self.kind == "Digital":
+            "Aquí poner la parte para opciones digitales"
+        else:
+            print("Cambiar por un tipo de derivado que sea válido")
         return
     
     def summary(self):
-        
+        print("RESUMEN:\
+              \n+++++++++++++++++++++++++++\
+              \nTipo de Derivado: {0}\
+              \nEs un Put?: {1}\
+              \nStrike: {2}\
+              \nS0: {3}\
+              \nVolatilidad:{4}\
+              \nTasa: {5}\
+              \nLonguitud del periodo de Valuación: {6}\
+              \nCantidad de periodos: {7}\
+              \nBarrera: {8}\
+              \nPrecio: {9}\
+              \nDeltas: {10}".format(self.kind, self.put, self.strike, self.S0,\
+                  self.volatility,self.rate, self.lenght, self.periods, self.barrier,\
+                      self.price, self.deltas))
         return
-
+    
