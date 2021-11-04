@@ -35,7 +35,7 @@ def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
         return C[0]
 
 def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
-    # Declaración de variables
+        # Declaración de variables
     delta = T/N
     B = exp(-r*delta)
     q = (B**(-1) - d)/(u-d)
@@ -156,9 +156,58 @@ def UpNInOption(K, T, S0, B, r, N, u, d, put = False):
     return C
 
 
-def LookBackOption():
-    
-    return
+
+def LookBackOption(T, S0, N, r, u, d):
+    # Declaración de variables
+    delta = T/N
+    #delta = 1/12
+    B = exp(-r*delta)
+    q = (B**(-1) - d)/(u-d)
+    S = [S0*(d**(arange(0, i+1, 1)))*(u**(arange(i,-1,-1))) for i in arange(N, -1,-1)]
+    up_down=list(itertools.product(['u','d'],repeat=N))
+    up_down = np.matrix(up_down)
+    n,m = up_down.shape
+    M = [[S0]*n]
+    for i in range(m):
+        temp = up_down[:,:i+1]
+        l = []
+        for j in range(n):
+            x,y = np.unique(np.asarray(temp[j]), return_counts=True)
+            if len(x) == 2:
+                if x[0] == "u":
+                    nu = y[0]
+                    nd = y[1]
+                else:
+                    nd = y[0]
+                    nu = y[1]
+            else:
+                if x[0] == "u":
+                    nu = y[0]
+                    nd = 0
+                else:
+                    nd = y[0]
+                    nu = 0
+            l.append(S0*(u**nu) * (d**nd))
+        M.append(l)
+    M = np.matrix(M)
+    C = M.max(0)
+    C = np.asarray(C)
+    C = C[0] # Payoffs
+
+    deltas = []
+    for i in arange(N,0,-1):
+        m = len(S[N+1-i])
+        l = []
+        X = []
+        chunks = list(partition(2**(N-m),np.asarray(M[m,:]).tolist()[0]))
+        for j in range(2**(m-1)):
+            temp = chunks[2*j][0] - chunks[2*j+1][0]
+            x = (C[2*j]-C[2*j +1])  / (temp)
+            l.append(x)
+            X.append(B*(q*C[2*j] + (1-q)*C[2*j +1]))
+        deltas.append(l)
+        C = X
+    return C, deltas
 
 
 def DigitalOption(K, T, r, S0, N, u, d):
