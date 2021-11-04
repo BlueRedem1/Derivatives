@@ -8,6 +8,7 @@ import pandas as pd
 import yfinance as yf
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
+import itertools
 
 """
 Aún falta el que la Americana de las alphas/deltas, y que toda la 
@@ -17,19 +18,6 @@ que dependen de la trayectoria se me ocurre hacer un árbol binario, pero
 puede que sea más complicado :s
 
 """
-###############################
-####### Arbol Binario #########
-###############################
-class Node:
-    def __init__(self, subyacente, derivado = None, suma_acumulada = None):
-        self.subyacente = 0.
-        self.derivado = derivado
-        self.suma_acumulada = suma_acumulada # Yn
-        self.u = 0.0
-        self.d = 0.0
-        
-################################
-
 
 def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
     # Declaración de variables
@@ -112,14 +100,54 @@ def VanillaAmericanOption(K, T, S0, r, N, u, d, put = False, hedge = True):
     
 
 def AsianOption(K, T, S0, N, r, u, d):
-    S = [S0*(d**(arange(0, i+1, 1)))*(u**(arange(i,-1,-1))) for i in arange(N, -1,-1)]
-    """
-    De momento esto sólo calcula los valores del subyacente, pero falta calcular Y y hacer la recursión
-    hacia atrás
-    """
-    # for i in range(2**N):
-        
-    return
+    # Declaración de variables
+    delta = T/N
+    B = exp(-r*delta)
+    q = (B**(-1) - d)/(u-d)
+    q = 1/2
+    # Matriz que almacena los valores del subyacente
+    arbol = zeros((N+1,N+1))
+    arbol[0,0] = S0
+    #For para llenar los valores de la matriz
+    for col in range(1, N +1):
+        for ren in range(0, N +1):
+            #Condicional para limitar matriz superior triangular
+            if((col - ren) >= 0):
+                arbol[ren, col] = S0 *(( u ** (col - ren)) * (d ** (ren)))
+    #Matriz que almacena el valor de los payoffs
+    payoffs = zeros((N+1, N+1))
+    payoffs=zeros((2**N, N+1))
+    up_down=list(itertools.product(['u','d'],repeat=N))
+    for ren in range(0,2**N):
+        pos=up_down[ren]
+        suma=S0
+        bajas=0
+        for i in range(0,N):
+            if(pos[i]=='d'):
+                bajas=bajas+1
+            suma=suma+arbol[bajas,(i+1)]
+        payoffs[ren,N]=max((suma/(N+1))-K,0)
+    #Sobreescribimos matriz de payoffs mediante el método iterativo
+    for i in range(1, N + 1):
+        col = N - i
+        for j in range(0, col +1): 
+            payoffs[j, col] = B * (q * payoffs[2*j, col + 1] + (1 - q)*payoffs[2*j +1, col +1])
+            
+    #Matriz que almacena los valores de las alfas  
+    alfas = zeros((2**N, N))
+    for ren in range(0,2**N):
+        for col in range(0, N):
+            #Condicional para limitar matriz superior triangular
+            if((col-ren) >= 0):
+                print(ren)
+                alfas[ren,col]=(payoffs[2*ren,col+1]-payoffs[2*ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
+    betas = zeros((2**N, N ))
+    for ren in range(0,N):
+        for col in range(0, N):
+            #Condicional para limitar matriz superior triangular
+            if((col - ren) >= 0):
+                betas[ren,col]= B*(payoffs[2*ren,col+1]-((payoffs[2*ren,col+1]-payoffs[ren+1,col+1])*arbol[ren,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1]))
+    return payoffs[0,0], alfas, betas
 
 def Forward(K, S0, r):
     # Considerando que la tasa r está dada para todo el periodo de valuación,
@@ -216,10 +244,10 @@ def DigitalOption(K, T, r, S0, N, u, d):
 
 class Derivative:
     
-    def __init__(self):
-        self.strike = 0.0
+    def __init__(self, S0, K, volatility, r):
+        self.strike = K
         self.payoff = 0.0
-        self.volatility = 0.0
+        self.volatility = vol
         self.rate = 0.0
         self.periods = 0.0
         self.date = 0.0
