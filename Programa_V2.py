@@ -256,7 +256,7 @@ class Derivative:
                                                      u=u, d=d)
         elif self.kind == "Forward":
             self.price = Forward(K=self.strike, S0=self.S0, r=self.rate)
-        elif self.kind == "UpNOut:
+        elif self.kind == "UpNOut":
             self.price = UpNOutOption(K=self.strike, T=self.lenght, S0=self.S0,\
                                       B=self.barrier, r=self.rate, N=self.periods,\
                                       u = u, d=d, put = self.put)
