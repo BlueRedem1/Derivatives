@@ -196,7 +196,24 @@ def DigitalOption(K, T, r, S0, N, u, d):
     for j in range(0, col +1): 
         payoffs[j, col] = math.exp(-r * delta_t) * (p * payoffs[j, col + 1] + (1 - p)*payoffs[j +1, col +1])
     return payoffs[0,0]    
-            
+
+    # Alfas
+    alfas = np.zeros((n, n ))
+    for ren in range(0,n):
+    for col in range(0, n):
+        if((col - ren) >= 0):
+            alfas[ren,col]=(payoffs[ren,col+1]-payoffs[ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
+    return alfas[]
+
+    # Betas
+    betas = np.zeros((n, n ))
+    for ren in range(0,n):
+    for col in range(0, n):
+        #Condicional para limitar matriz superior triangular
+        if((col - ren) >= 0):
+            betas[ren,col]=math.exp(-r * delta_t)*(payoffs[ren,col+1]-((payoffs[ren,col+1]-payoffs[ren+1,col+1])*arbol[ren,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1]))
+    return betas[]
+
 class Derivative:
     
     def __init__(self):
