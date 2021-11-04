@@ -260,7 +260,7 @@ def DigitalOption(K, T, r, S0, N, u, d):
 
 class Derivative:
     
-    def __init__(self, S0, K, volatility, r, N, T, kind, put = False, B = None):
+    def __init__(self, S0, K, vol, r, N, T, kind, put = False, B = None):
         self.strike = K
         self.kind = kind
         self.put = put
@@ -269,7 +269,7 @@ class Derivative:
         self.periods = N
         self.lenght = T
         self.deltas = []
-        self.S0 = 0.0
+        self.S0 = S0
         self.q = 0.0
         self.price = 0.0
         self.barrier = B
@@ -315,6 +315,10 @@ class Derivative:
                                      u=u, d=d, put = self.put)
         elif self.kind == "Digital":
             "Aquí poner la parte para opciones digitales"
+        elif self.kind == "LookBack":
+            self.price, self.deltas = LookBackOption(T=self.lenght, S0=self.S0,\
+                                                     N = self.periods, r=self.rate,\
+                                                    u=u, d=d)
         else:
             print("Cambiar por un tipo de derivado que sea válido")
         return
