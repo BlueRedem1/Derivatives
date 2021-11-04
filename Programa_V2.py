@@ -7,6 +7,7 @@ Created on Thu Oct 28 10:03:14 2021
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
 import itertools
+from toolz import partition
 
 def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
     # Declaración de variables
