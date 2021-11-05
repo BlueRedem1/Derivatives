@@ -72,50 +72,52 @@ def AsianOption(K, T, S0, N, r, u, d):
     delta = T/N
     B = exp(-r*delta)
     q = (B**(-1) - d)/(u-d)
-    
-    # Matriz que almacena los valores del subyacente.
-    arbol = zeros((N+1,N+1))
-    arbol[0,0] = S0
-    #For para llenar los valores de la matriz
-    for col in range(1, N +1):
-        for ren in range(0, N +1):
-            #Condicional para limitar matriz superior triangular
-            if((col - ren) >= 0):
-                arbol[ren, col] = S0 *(( u ** (col - ren)) * (d ** (ren)))
-    #Matriz que almacena el valor de los payoffs
-    payoffs = zeros((N+1, N+1))
-    payoffs=zeros((2**N, N+1))
+    S = [S0*(d**(arange(0, i+1, 1)))*(u**(arange(i,-1,-1))) for i in arange(N, -1,-1)]
     up_down=list(itertools.product(['u','d'],repeat=N))
-    for ren in range(0,2**N):
-        pos=up_down[ren]
-        suma=S0
-        bajas=0
-        for i in range(0,N):
-            if(pos[i]=='d'):
-                bajas=bajas+1
-            suma=suma+arbol[bajas,(i+1)]
-        payoffs[ren,N]=max((suma/(N+1))-K,0)
-    #Sobreescribimos matriz de payoffs mediante el método iterativo
-    for i in range(1, N + 1):
-        col = N - i
-        for j in range(0, 2**col): 
-            payoffs[j, col] = B * (q * payoffs[2*j, col + 1] + (1 - q)*payoffs[2*j +1, col +1])
-            
-    #Matriz que almacena los valores de las alfas  
-    alfas = zeros((2**N, N))
-    for ren in range(0,2**N):
-        for col in range(0, N):
-            #Condicional para limitar matriz superior triangular
-            if((col-ren) >= 0):
-                print(ren)
-                alfas[ren,col]=(payoffs[2*ren,col+1]-payoffs[2*ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
-    betas = zeros((2**N, N ))
-    for ren in range(0,N):
-        for col in range(0, N):
-            #Condicional para limitar matriz superior triangular
-            if((col - ren) >= 0):
-                betas[ren,col]= B*(payoffs[2*ren,col+1]-((payoffs[2*ren,col+1]-payoffs[ren+1,col+1])*arbol[ren,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1]))
-    return payoffs[0,0], alfas, betas
+    up_down = np.matrix(up_down)
+    n,m = up_down.shape
+    M = [[S0]*n]
+    for i in range(m):
+        temp = up_down[:,:i+1]
+        l = []
+        for j in range(n):
+            x,y = np.unique(np.asarray(temp[j]), return_counts=True)
+            if len(x) == 2:
+                if x[0] == "u":
+                    nu = y[0]
+                    nd = y[1]
+                else:
+                    nd = y[0]
+                    nu = y[1]
+            else:
+                if x[0] == "u":
+                    nu = y[0]
+                    nd = 0
+                else:
+                    nd = y[0]
+                    nu = 0
+            l.append(S0*(u**nu) * (d**nd))
+        M.append(l)
+    M = np.matrix(M)
+    Y = M.sum(axis = 0)
+    C = maximum((Y/(N+1))-K, 0)
+    C = np.asarray(C)
+    C = C[0] # Payoffs
+
+    deltas = []
+    for i in arange(N,0,-1):
+        m = len(S[N+1-i])
+        l = []
+        X = []
+        chunks = list(partition(2**(N-m),np.asarray(M[m,:]).tolist()[0]))
+        for j in range(2**(m-1)):
+            temp = chunks[2*j][0] - chunks[2*j+1][0]
+            x = (C[2*j]-C[2*j +1])  / (temp)
+            l.append(x)
+            X.append(B*(q*C[2*j] + (1-q)*C[2*j +1]))
+        deltas.append(l)
+        C = X
+    return C, deltas
 
 def Forward(K, S0, r):
     # Considerando que la tasa r está dada para todo el periodo de valuación,
@@ -298,7 +300,7 @@ class Derivative:
                                                             put = self.put,\
                                                             hedge = True)
         elif self.kind == "Asian":
-            self.price, self.deltas, _ = AsianOption(K = self.strike,\
+            self.price, self.deltas = AsianOption(K = self.strike,\
                                                      T = self.lenght,\
                                                      S0 = self.S0,\
                                                      N = self.periods,\
