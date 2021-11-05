@@ -2,8 +2,11 @@
 """
 Created on Thu Oct 28 10:03:14 2021
 
-@author: Arath Reyes
+@author: Arath Alejandro Reyes López
          Valeria Lucero Cruz Estrada
+         Adriana Caballero Salazar
+         Valeria Lizette Paz Garduño
+         Eduardo de Jesús Cuéllar Chávez
 """
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
