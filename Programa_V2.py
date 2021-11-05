@@ -8,6 +8,7 @@ from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
 import itertools
 from toolz import partition
+import math
 
 def VanillaEuropeanOption(K, T, S0, r, N, u, d, put = False, hedge = False):
     # Declaración de variables
@@ -214,52 +215,51 @@ def LookBackOption(T, S0, N, r, u, d):
 
 
 def DigitalOption(K, T, r, S0, N, u, d):
-    delta_t = T / n
+    delta_t = T / N
     # Probabilidad de aumento en el precio
     p = (math.exp(r * delta_t) - d) / (u - d) 
     
     # Construcción árbol del subyacente.
     # Primer paso
     arbol = np.zeros((N + 1, N + 1))
-    arbol[0,0] = S_0
+    arbol[0,0] = S0
     # Resto de los pasos
-for col in range(1, N +1):
-    for ren in range(0, N +1):
-        if((col - ren) >= 0):
-            arbol[ren, col] = S_0 *(( u ** (col - ren)) * (d ** (ren)))
-    return arbol
+    for col in range(1, N +1):
+        for ren in range(0, N +1):
+            if((col - ren) >= 0):
+                arbol[ren, col] = S0 *(( u ** (col - ren)) * (d ** (ren)))
 
     # Payoff primer paso
     payoffs = np.zeros((N+1, N+1))
     for ren in range(0, N+1):
-        if (arbol[ren, N] > S_0):
-            payoffs[ren, N] = k
+        if (arbol[ren, N] > S0):
+            payoffs[ren, N] = K
         else:
-            base[ren, N] = 0
+            payoffs[ren, N] = 0
             
     # Valuando backwards        
-for i in range(1, N + 1):
-    col = N - i
+    for i in range(1, N + 1):
+        col = N - i
     for j in range(0, col +1): 
         payoffs[j, col] = math.exp(-r * delta_t) * (p * payoffs[j, col + 1] + (1 - p)*payoffs[j +1, col +1])
     return payoffs[0,0]    
 
     # Alfas
     alfas = np.zeros((N, N ))
-for ren in range(0,N):
-    for col in range(0, N):
+    for ren in range(0,N):
+        for col in range(0, N):
             if((col - ren) >= 0):
-            alfas[ren,col]=(payoffs[ren,col+1]-payoffs[ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
-    return alfas[]
+                alfas[ren,col]=(payoffs[ren,col+1]-payoffs[ren+1,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1])
+
 
     # Betas
     betas = np.zeros((N, N ))
-for ren in range(0,N):
-    for col in range(0, N):
+    for ren in range(0,N):
+        for col in range(0, N):
         #Condicional para limitar matriz superior triangular
-        if((col - ren) >= 0):
-            betas[ren,col]=math.exp(-r * delta_t)*(payoffs[ren,col+1]-((payoffs[ren,col+1]-payoffs[ren+1,col+1])*arbol[ren,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1]))
-    return betas[]
+            if((col - ren) >= 0):
+                betas[ren,col]=math.exp(-r * delta_t)*(payoffs[ren,col+1]-((payoffs[ren,col+1]-payoffs[ren+1,col+1])*arbol[ren,col+1])/(arbol[ren,col+1]-arbol[ren+1,col+1]))
+    return payoffs[0,0], alfas, betas
 
 class Derivative:
     
@@ -323,7 +323,8 @@ class Derivative:
                                                      N = self.periods, r=self.rate,\
                                                     u=u, d=d)
         else:
-            print("Cambiar por un tipo de derivado que sea válido")
+            self.price, self.deltas, _ = LookBackOption(T=self.lenght, S0=self.S0,\
+                                                        N=self.periods, r=self.rate, u=u, d=d)
         return
     
     def summary(self):
