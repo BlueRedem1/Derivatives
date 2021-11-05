@@ -321,7 +321,8 @@ class Derivative:
                                      B=self.barrier, r=self.rate, N=self.periods,\
                                      u=u, d=d, put = self.put)
         elif self.kind == "Digital":
-            self.price = DigitalOption(K=self.strike, T=self.lenght, r=self.rate, S0=self.S0, N=self.periods, u=u, d=d):
+            self.price = DigitalOption(K=self.strike, T=self.lenght, r=self.rate,\ 
+                                       S0=self.S0, N=self.periods, u=u, d=d):
         elif self.kind == "LookBack":
             self.price, self.deltas = LookBackOption(T=self.lenght, S0=self.S0,\
                                                      N = self.periods, r=self.rate,\
