@@ -2,11 +2,11 @@
 """
 Created on Thu Oct 28 10:03:14 2021
 
-@author: Arath Alejandro Reyes López
-         Valeria Lucero Cruz Estrada
-         Adriana Caballero Salazar
-         Valeria Lizette Paz Garduño
-         Eduardo de Jesús Cuéllar Chávez
+@author: Caballero Salazar Adriana
+         Cruz Estrada Valeria Lucero
+         Cuéllar Chávez Eduardo de Jesús
+         Paz Garduño Valeria Lizette
+         Reyes López Arath Alejandro
 """
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
