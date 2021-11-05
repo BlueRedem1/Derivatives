@@ -3,6 +3,7 @@
 Created on Thu Oct 28 10:03:14 2021
 
 @author: Arath Reyes
+         Valeria Lucero Cruz Estrada
 """
 from numpy import maximum, exp, arange, zeros, mean, repeat
 import numpy as np
